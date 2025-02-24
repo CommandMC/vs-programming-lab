@@ -6,7 +6,6 @@ import '@fontsource/roboto/300.css'
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
-import MapComponent from './components/MapComponent'
 
 const router = createBrowserRouter([
   {
@@ -17,8 +16,11 @@ const router = createBrowserRouter([
     },
     children: [
       {
-        path: 'map',
-        element: <MapComponent />
+        index: true,
+        lazy: async () => {
+          const { default: Home } = await import('./screens/Home')
+          return { Component: Home }
+        }
       }
     ]
   }
