@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Button, Paper } from '@mui/material'
 import L from 'leaflet'
-import { Marker, Popup, useMap } from 'react-leaflet'
+import { LayerGroup, LayersControl, Marker, Popup, useMap } from 'react-leaflet'
 
 import LocationPicker from './components/LocationPicker'
 
@@ -52,16 +52,20 @@ export default function StartAndEndPointPicker({ onRoutePressed }: Props) {
           </Button>
         </Paper>
       </div>
-      {startPoint && (
-        <Marker position={startPoint}>
-          <Popup>Start point</Popup>
-        </Marker>
-      )}
-      {endPoint && (
-        <Marker position={endPoint}>
-          <Popup>End point</Popup>
-        </Marker>
-      )}
+      <LayersControl.Overlay checked name='Start/End markers'>
+        <LayerGroup>
+          {startPoint && (
+            <Marker position={startPoint}>
+              <Popup>Start point</Popup>
+            </Marker>
+          )}
+          {endPoint && (
+            <Marker position={endPoint}>
+              <Popup>End point</Popup>
+            </Marker>
+          )}
+        </LayerGroup>
+      </LayersControl.Overlay>
     </>
   )
 }

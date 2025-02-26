@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import L, { type Layer as LeafletLayer, type Map as LeafletMap } from 'leaflet'
-import { MapContainer, TileLayer } from 'react-leaflet'
+import L, {
+  type Layer as LeafletLayer,
+  type Map as LeafletMap,
+  type Control as LeafletControl
+} from 'leaflet'
+import { LayersControl, MapContainer, TileLayer } from 'react-leaflet'
 import type { GeoJsonObject } from 'geojson'
 
 import StartAndEndPointPicker from '../../components/StartAndEndPointPicker'
@@ -10,6 +14,7 @@ const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
 export default function HomeScreen() {
   const [route, setRoute] = useState<GeoJsonObject | null>(null)
   const mapContainerRef = useRef<LeafletMap>(null)
+  const layerControlRef = useRef<LeafletControl.Layers>(null)
   const [routeLayer, setRouteLayer] = useState<LeafletLayer | null>(null)
 
   const lookupRoute = useCallback(
@@ -31,13 +36,19 @@ export default function HomeScreen() {
         }
       )
       const json = await response.json()
-      if (mapContainerRef.current) {
-        if (routeLayer !== null) mapContainerRef.current.removeLayer(routeLayer)
-        setRouteLayer(L.geoJson(json).addTo(mapContainerRef.current))
+      if (mapContainerRef.current && layerControlRef.current) {
+        if (routeLayer !== null) {
+          mapContainerRef.current.removeLayer(routeLayer)
+          layerControlRef.current.removeLayer(routeLayer)
+        }
+        const newLayer = L.geoJson(json)
+        newLayer.addTo(mapContainerRef.current)
+        layerControlRef.current.addOverlay(newLayer, 'Route')
+        setRouteLayer(newLayer)
       }
       setRoute(json)
     },
-    [setRoute, mapContainerRef.current, routeLayer]
+    [setRoute, mapContainerRef.current, layerControlRef.current, routeLayer]
   )
 
   useEffect(() => {
@@ -56,7 +67,9 @@ export default function HomeScreen() {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
       />
-      <StartAndEndPointPicker onRoutePressed={lookupRoute} />
+      <LayersControl position='topright' ref={layerControlRef}>
+        <StartAndEndPointPicker onRoutePressed={lookupRoute} />
+      </LayersControl>
     </MapContainer>
   )
 }
