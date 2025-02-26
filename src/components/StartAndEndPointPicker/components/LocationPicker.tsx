@@ -11,6 +11,8 @@ interface Props {
 const COORDS_REGEX = /(\d+(?:.\d+)?),\s*(\d+(?:.\d+)?)/
 
 export default function LocationPicker({ label, onLocationUpdate }: Props) {
+  const [selectedLocation, setSelectedLocation] =
+    useState<NominatimResponse | null>(null)
   const [searchResults, setSearchResults] = useState<NominatimResponse[]>([])
 
   const setCoordinatesOrSearchForLocation = useCallback(
@@ -27,6 +29,7 @@ export default function LocationPicker({ label, onLocationUpdate }: Props) {
           Number(coordsOrLocationName.lat),
           Number(coordsOrLocationName.lon)
         ])
+        setSelectedLocation(coordsOrLocationName)
         return
       }
       const match = coordsOrLocationName.match(COORDS_REGEX)
@@ -36,6 +39,9 @@ export default function LocationPicker({ label, onLocationUpdate }: Props) {
         const [, lat, lon] = match
         if (!lat || !lon) return
         onLocationUpdate([Number(lat), Number(lon)])
+        const reverseResponse = await Nominatim.reverseGeocode({ lat, lon })
+        setSearchResults([reverseResponse])
+        setSelectedLocation(reverseResponse)
       } else {
         // Case 3: User wants to search for a location
         const request: GeocodeRequest = {
@@ -50,6 +56,7 @@ export default function LocationPicker({ label, onLocationUpdate }: Props) {
 
   return (
     <Autocomplete
+      value={selectedLocation}
       renderInput={(params) => (
         <TextField
           label={label}
@@ -58,9 +65,7 @@ export default function LocationPicker({ label, onLocationUpdate }: Props) {
         />
       )}
       options={searchResults}
-      getOptionLabel={(option) =>
-        typeof option === 'string' ? option : option.display_name
-      }
+      getOptionLabel={(option) => option.display_name}
       includeInputInList
       filterSelectedOptions
       noOptionsText='Hit Enter to search for given input'
