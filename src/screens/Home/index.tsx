@@ -6,6 +6,7 @@ import L, {
 } from 'leaflet'
 import { LayersControl, MapContainer, TileLayer } from 'react-leaflet'
 import type { GeoJsonObject } from 'geojson'
+import chroma from 'chroma-js'
 
 import StartAndEndPointPicker from '../../components/StartAndEndPointPicker'
 
@@ -31,28 +32,52 @@ export default function HomeScreen() {
           },
           body: JSON.stringify({
             coordinates: [start.toReversed(), end.toReversed()],
-            attributes: ['avgspeed']
+            options: { avoid_features: ['tollways'] }
           })
         }
       )
       const json = await response.json()
+      setRoute(json)
       if (mapContainerRef.current && layerControlRef.current) {
         if (routeLayer !== null) {
           mapContainerRef.current.removeLayer(routeLayer)
           layerControlRef.current.removeLayer(routeLayer)
         }
-        const newLayer = L.geoJson(json)
+        const newLayer = L.layerGroup()
+        const waypoints: [number, number][] =
+          json.features[0].geometry.coordinates.map(
+            (waypoint: [number, number]) => waypoint.toReversed()
+          )
+        const gradient = chroma.scale(['red', 'yellow', 'green'])
+        for (const step of json.features[0].properties.segments[0].steps) {
+          const speed_mps = step.distance / step.duration
+          const speed_kmh = speed_mps * 3.6
+          const relative_speed = speed_kmh / 130
+          const color_at_speed = gradient(relative_speed)
+          const [firstWaypointIndex, lastWaypointIndex] = step.way_points
+          L.polyline(
+            waypoints.slice(firstWaypointIndex, lastWaypointIndex + 1),
+            {
+              color: color_at_speed.hex()
+            }
+          )
+            .bindPopup(
+              L.popup({
+                content: `${step.instruction}<br />${speed_kmh.toFixed(2)} km/h`
+              })
+            )
+            .addTo(newLayer)
+        }
         newLayer.addTo(mapContainerRef.current)
         layerControlRef.current.addOverlay(newLayer, 'Route')
         setRouteLayer(newLayer)
       }
-      setRoute(json)
     },
     [setRoute, mapContainerRef.current, layerControlRef.current, routeLayer]
   )
 
   useEffect(() => {
-    console.log(route)
+    if (route) console.log(route)
   }, [route])
 
   return (
