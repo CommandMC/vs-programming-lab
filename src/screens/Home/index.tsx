@@ -115,6 +115,17 @@ out ids geom;`
         {route && <RouteLayer route={route} />}
         {bridges && <BridgesLayer bridges={bridges} />}
       </LayersControl>
+      <div className='leaflet-bottom leaflet-left'>
+        <Button
+          className='leaflet-control'
+          sx={{ margin: 3 }}
+          variant='contained'
+          color='primary'
+          startIcon={<DownloadIcon />}
+        >
+          Download route data
+        </Button>
+      </div>
     </MapContainer>
   )
 }
