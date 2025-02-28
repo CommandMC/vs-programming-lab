@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Paper } from '@mui/material'
+import { Paper } from '@mui/material'
+import LoadingButton from '@mui/lab/LoadingButton'
 import L from 'leaflet'
 import { LayerGroup, LayersControl, Marker, Popup, useMap } from 'react-leaflet'
 
@@ -10,9 +11,13 @@ interface Props {
     startCoords: [number, number],
     endCoords: [number, number]
   ) => void
+  loadingText?: string
 }
 
-export default function StartAndEndPointPicker({ onRoutePressed }: Props) {
+export default function StartAndEndPointPicker({
+  onRoutePressed,
+  loadingText
+}: Props) {
   const [startPoint, setStartPoint] = useState<[number, number] | null>(null)
   const [endPoint, setEndPoint] = useState<[number, number] | null>(null)
 
@@ -40,16 +45,18 @@ export default function StartAndEndPointPicker({ onRoutePressed }: Props) {
             onLocationUpdate={setStartPoint}
           />
           <LocationPicker label='End location' onLocationUpdate={setEndPoint} />
-          <Button
+          <LoadingButton
+            loading={!!loadingText}
             color='success'
             disabled={!startPoint || !endPoint}
+            loadingPosition='start'
             onClick={() => {
               if (!startPoint || !endPoint) return
               onRoutePressed(startPoint, endPoint)
             }}
           >
-            Compute route
-          </Button>
+            {loadingText ?? 'Compute route'}
+          </LoadingButton>
         </Paper>
       </div>
       <LayersControl.Overlay checked name='Start/End markers'>

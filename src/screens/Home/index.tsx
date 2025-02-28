@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { LayersControl, MapContainer, TileLayer } from 'react-leaflet'
 import { Button } from '@mui/material'
 import { Download as DownloadIcon } from '@mui/icons-material'
@@ -21,9 +21,13 @@ export default function HomeScreen() {
     null
   )
   const [bridges, setBridges] = useState<OverpassWay[] | null>(null)
+  const [fetchingRoute, setFetchingRoute] = useState(false)
+  const [fetchingBridges, setFetchingBridges] = useState(false)
 
   const lookupRoute = useCallback(
     async (start: [number, number], end: [number, number]) => {
+      setRoute(null)
+      setFetchingRoute(true)
       const newRoute = await routing_api.route_request({
         service: 'route',
         profile: 'car',
@@ -36,6 +40,7 @@ export default function HomeScreen() {
         annotations: 'true'
       })
       setRoute(newRoute.routes[0])
+      setFetchingRoute(false)
     },
     [setRoute]
   )
@@ -45,7 +50,11 @@ export default function HomeScreen() {
   }, [route])
 
   useEffect(() => {
-    if (!route) return
+    if (!route) {
+      setBridges(null)
+      return
+    }
+    setFetchingBridges(true)
     const even: number[] = [],
       odd: number[] = []
     route.legs
@@ -77,8 +86,15 @@ out ids geom;`
       .then((response: { elements: OverpassWay[] }) => {
         setBridges(response.elements)
         console.log('Bridges updated:', response.elements)
+        setFetchingBridges(false)
       })
   }, [route])
+
+  const routeButtonLoadingText = useMemo(() => {
+    if (fetchingRoute) return 'Fetching route'
+    if (fetchingBridges) return 'Fetching bridges'
+    return undefined
+  }, [fetchingRoute, fetchingBridges])
 
   return (
     <MapContainer
@@ -92,7 +108,10 @@ out ids geom;`
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
       />
       <LayersControl position='topright'>
-        <StartAndEndPointPicker onRoutePressed={lookupRoute} />
+        <StartAndEndPointPicker
+          onRoutePressed={lookupRoute}
+          loadingText={routeButtonLoadingText}
+        />
         {route && <RouteLayer route={route} />}
         {bridges && <BridgesLayer bridges={bridges} />}
       </LayersControl>
