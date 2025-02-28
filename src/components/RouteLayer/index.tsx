@@ -4,46 +4,76 @@ import { useLeafletContext } from '@react-leaflet/core'
 import chroma from 'chroma-js'
 import { Paper } from '@mui/material'
 
-import type { RouteFeatureCollection } from '../../types'
+import type { OSMID, Route, RouteLeg } from '../../osrm-api/types'
+import type { LineString, Position } from 'geojson'
 
 interface Props {
-  route: RouteFeatureCollection
+  route: Route<LineString, false, true>
 }
 
 const gradient = chroma.scale(['red', 'yellow', 'green'])
 
 export default function RouteLayer({ route }: Props) {
   const { map, layersControl } = useLeafletContext()
-  const [routeLayer, setRouteLayer] = useState<LeafletLayer | null>(null)
+  const [routeNodesLayer, setRouteNodesLayer] = useState<LeafletLayer | null>(
+    null
+  )
 
   useEffect(() => {
     const newLayer = L.layerGroup()
-    const waypoints = route.features[0]!.geometry.coordinates.map(
-      (waypoint) => waypoint.toReversed() as [number, number]
-    )
-    for (const step of route.features[0]!.properties['segments'][0]!.steps) {
-      const speed_mps = step.distance / step.duration
-      const speed_kmh = speed_mps * 3.6
+
+    function renderPolyline(
+      first_id: OSMID,
+      second_id: OSMID,
+      pos1: Position,
+      pos2: Position,
+      speed: number
+    ) {
+      const speed_kmh = speed * 3.6
       const relative_speed = Math.max(speed_kmh - 10, 0) / 120
       const color_at_speed = gradient(relative_speed)
-      const [firstWaypointIndex, lastWaypointIndex] = step.way_points
-      L.polyline(waypoints.slice(firstWaypointIndex, lastWaypointIndex + 1), {
-        color: color_at_speed.hex()
-      })
+
+      L.polyline(
+        [
+          pos1.toReversed() as [number, number],
+          pos2.toReversed() as [number, number]
+        ],
+        { color: color_at_speed.hex() }
+      )
         .bindPopup(
           L.popup({
-            content: `${step.instruction}<br />${speed_kmh.toFixed(2)} km/h`
+            content: `OSM IDs:<br />${first_id}<br />${second_id}`
           })
         )
         .addTo(newLayer)
     }
-    if (routeLayer) {
-      routeLayer.remove()
-      layersControl?.removeLayer(routeLayer)
+
+    function renderRouteLeg(leg: RouteLeg<LineString, false, true>) {
+      const coordinates = leg.steps
+        .map((step, i) => step.geometry.coordinates.slice(i === 0 ? 0 : 1))
+        .flat()
+      leg.annotation.nodes.map((nodeid, i) => {
+        const next_id = leg.annotation.nodes[i + 1]
+        if (!next_id) return
+        renderPolyline(
+          nodeid,
+          next_id,
+          coordinates[i]!,
+          coordinates[i + 1]!,
+          leg.annotation.speed[i]!
+        )
+      })
+    }
+
+    route.legs.map(renderRouteLeg)
+
+    if (routeNodesLayer) {
+      routeNodesLayer.remove()
+      layersControl?.removeLayer(routeNodesLayer)
     }
     newLayer.addTo(map)
     layersControl?.addOverlay(newLayer, 'Route')
-    setRouteLayer(newLayer)
+    setRouteNodesLayer(newLayer)
     return () => {
       newLayer.remove()
       layersControl?.removeLayer(newLayer)
