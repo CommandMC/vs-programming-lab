@@ -5,10 +5,12 @@ import { Download as DownloadIcon } from '@mui/icons-material'
 
 import StartAndEndPointPicker from '../../components/StartAndEndPointPicker'
 import RouteLayer from '../../components/RouteLayer'
+import BridgesLayer from '../../components/BridgesLayer'
 import OSRMApi from '../../osrm-api'
 
 import type { Route } from '../../osrm-api/types'
 import type { LineString } from 'geojson'
+import type { OverpassWay } from '../../types'
 
 const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
 
@@ -18,6 +20,7 @@ export default function HomeScreen() {
   const [route, setRoute] = useState<Route<LineString, false, true> | null>(
     null
   )
+  const [bridges, setBridges] = useState<OverpassWay[] | null>(null)
 
   const lookupRoute = useCallback(
     async (start: [number, number], end: [number, number]) => {
@@ -41,6 +44,42 @@ export default function HomeScreen() {
     if (route) console.log('Route updated:', route)
   }, [route])
 
+  useEffect(() => {
+    if (!route) return
+    const even: number[] = [],
+      odd: number[] = []
+    route.legs
+      .map((leg) => leg.annotation.nodes)
+      .flat()
+      .forEach((v, i) => (i % 2 ? odd : even).push(v))
+    console.log('Fetching bridges...')
+    const query = `
+[out:json][timeout: 500];
+node(id: ${even});
+way(bn)[highway]->.route_a;
+node(id: ${odd});
+way(bn)[highway]->.route_b;
+
+way.route_a.route_b->.route;
+way.route[tunnel]->.tunnels;
+     
+(.route; - way.route[man_made="bridge"];)->.route;
+way(around.route:0)[bridge]->.bridges;
+(.bridges; - .route;)->.crossing;
+(.tunnels; .crossing;);
+out ids geom;`
+    console.log(query)
+    fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: 'data=' + encodeURIComponent(query)
+    })
+      .then((data) => data.json())
+      .then((response: { elements: OverpassWay[] }) => {
+        setBridges(response.elements)
+        console.log('Bridges updated:', response.elements)
+      })
+  }, [route])
+
   return (
     <MapContainer
       center={COORDS_OSNABRUECK}
@@ -55,6 +94,7 @@ export default function HomeScreen() {
       <LayersControl position='topright'>
         <StartAndEndPointPicker onRoutePressed={lookupRoute} />
         {route && <RouteLayer route={route} />}
+        {bridges && <BridgesLayer bridges={bridges} />}
       </LayersControl>
     </MapContainer>
   )
