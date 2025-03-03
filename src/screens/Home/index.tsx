@@ -73,7 +73,7 @@ way.route_a.route_b->.route;
 way.route[tunnel]->.tunnels;
      
 (.route; - way.route[man_made="bridge"];)->.route;
-way(around.route:0)[bridge]->.bridges;
+way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
 (.bridges; - .route;)->.crossing;
 (.tunnels; .crossing;);
 out ids geom;`
