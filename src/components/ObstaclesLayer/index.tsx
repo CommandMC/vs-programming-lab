@@ -22,7 +22,7 @@ function ObstaclesLayer({ obstacles }: Props) {
               color: prefersDarkMode ? 'white' : 'darkblue'
             }}
           >
-            <Popup>{obstacle.id}</Popup>
+            <Popup>OSM ID: {obstacle.id}</Popup>
           </Polyline>
         ))}
       </LayerGroup>

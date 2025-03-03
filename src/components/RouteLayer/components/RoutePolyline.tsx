@@ -30,8 +30,11 @@ function RoutePolyline({ id1, id2, pos1, pos2, speed }: Props) {
     >
       <Popup>
         OSM IDs:
-        <br />${id1}
-        <br />${id2}
+        <ul>
+          <li>{id1}</li>
+          <li>{id2}</li>
+        </ul>
+        Speed: {speed_kmh.toFixed(2)} km/h
       </Popup>
     </Polyline>
   )
