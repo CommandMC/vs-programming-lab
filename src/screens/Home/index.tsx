@@ -5,7 +5,7 @@ import { Download as DownloadIcon } from '@mui/icons-material'
 
 import StartAndEndPointPicker from '../../components/StartAndEndPointPicker'
 import RouteLayer from '../../components/RouteLayer'
-import BridgesLayer from '../../components/BridgesLayer'
+import ObstaclesLayer from '../../components/ObstaclesLayer'
 import OSRMApi from '../../osrm-api'
 
 import type { Route } from '../../osrm-api/types'
@@ -20,9 +20,9 @@ export default function HomeScreen() {
   const [route, setRoute] = useState<Route<LineString, false, true> | null>(
     null
   )
-  const [bridges, setBridges] = useState<OverpassWay[] | null>(null)
+  const [obstacles, setObstacles] = useState<OverpassWay[] | null>(null)
   const [fetchingRoute, setFetchingRoute] = useState(false)
-  const [fetchingBridges, setFetchingBridges] = useState(false)
+  const [fetchingObstacles, setFetchingObstacles] = useState(false)
 
   const lookupRoute = useCallback(
     async (start: [number, number], end: [number, number]) => {
@@ -51,10 +51,10 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!route) {
-      setBridges(null)
+      setObstacles(null)
       return
     }
-    setFetchingBridges(true)
+    setFetchingObstacles(true)
     const even: number[] = [],
       odd: number[] = []
     route.legs
@@ -83,18 +83,18 @@ out ids geom;`
       body: 'data=' + encodeURIComponent(query)
     })
       .then((data) => data.json())
-      .then((response: { elements: OverpassWay[] }) => {
-        setBridges(response.elements)
-        console.log('Bridges updated:', response.elements)
-        setFetchingBridges(false)
+      .then(({ elements: obstacles }: { elements: OverpassWay[] }) => {
+        setObstacles(obstacles)
+        console.log('Obstacles updated:', obstacles)
+        setFetchingObstacles(false)
       })
   }, [route])
 
   const routeButtonLoadingText = useMemo(() => {
     if (fetchingRoute) return 'Fetching route'
-    if (fetchingBridges) return 'Fetching bridges'
+    if (fetchingObstacles) return 'Fetching obstacles'
     return undefined
-  }, [fetchingRoute, fetchingBridges])
+  }, [fetchingRoute, fetchingObstacles])
 
   return (
     <MapContainer
@@ -113,7 +113,7 @@ out ids geom;`
           loadingText={routeButtonLoadingText}
         />
         {route && <RouteLayer route={route} />}
-        {bridges && <BridgesLayer bridges={bridges} />}
+        {obstacles && <ObstaclesLayer obstacles={obstacles} />}
       </LayersControl>
       <div className='leaflet-bottom leaflet-left'>
         <Button
