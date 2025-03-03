@@ -3,10 +3,22 @@ interface LatLonObj {
   lon: number
 }
 
-interface OverpassWay {
-  geometry: LatLonObj[]
+interface OverpassCount {
+  type: 'count'
   id: number
-  type: 'way'
+  tags: Record<'nodes' | 'ways' | 'relations' | 'total', string>
 }
 
-export type { OverpassWay }
+interface OverpassWay {
+  type: 'way'
+  id: number
+  bounds: {
+    minlat: number
+    minlon: number
+    maxlat: number
+    maxlon: number
+  }
+  geometry: LatLonObj[]
+}
+
+export type { OverpassCount, OverpassWay }

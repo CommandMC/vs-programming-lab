@@ -29,6 +29,9 @@ importers:
       chroma-js:
         specifier: ^3.1.2
         version: 3.1.2
+      haversine-distance:
+        specifier: ^1.2.3
+        version: 1.2.3
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -909,6 +912,9 @@ packages:
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
+
+  haversine-distance@1.2.3:
+    resolution: {integrity: sha512-cRKtuukt+/fVprlLueX30mytMNtiQ4tff93FDW9yrBx3BYrq6gujiw1+hEaaxssKlOZTm8R3BPtMbNM+n0+bqQ==}
 
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
@@ -1919,6 +1925,8 @@ snapshots:
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
+
+  haversine-distance@1.2.3: {}
 
   hoist-non-react-statics@3.3.2:
     dependencies:
