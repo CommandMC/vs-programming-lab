@@ -31,6 +31,7 @@ export default function HomeScreen() {
         speed: number
         coordinates: [number, number]
         timestamp: number
+        distance: number
       }
     >
   } | null>(null)
@@ -71,6 +72,17 @@ export default function HomeScreen() {
       // very first node's speed to 0
       nodeSpeeds.unshift(0)
 
+      const nodeDistances = newRoute.routes[0].legs
+        .map((leg) => leg.annotation.distance)
+        .flat()
+        .reduce(
+          (previousValue, currentValue) => [
+            ...previousValue,
+            previousValue.at(-1)! + currentValue
+          ],
+          [0]
+        )
+
       const nodeTimestamps = newRoute.routes[0].legs
         .map((leg) => leg.annotation.duration)
         .flat()
@@ -88,6 +100,7 @@ export default function HomeScreen() {
           speed: number
           coordinates: [number, number]
           timestamp: number
+          distance: number
         }
       > = {}
       newRoute.routes[0].legs
@@ -97,11 +110,13 @@ export default function HomeScreen() {
           const coords = nodeCoords[i]
           const speedAtNode = nodeSpeeds[i]
           const timestamp = nodeTimestamps[i]
-          if (!coords || !speedAtNode || !timestamp) return
+          const distance = nodeDistances[i]
+          if (!coords || !speedAtNode || !timestamp || !distance) return
           newNodeData[nodeid] = {
             coordinates: coords.toReversed() as [number, number],
             speed: speedAtNode,
-            timestamp: timestamp
+            timestamp,
+            distance
           }
         })
 
@@ -210,6 +225,35 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
     [obstacles, tunnels]
   )
 
+  const downloadRouteData = useCallback(() => {
+    if (!routeData || !obstacles || !tunnels) return
+    const blob = new Blob(
+      [
+        JSON.stringify({
+          routeData: {
+            route: routeData.route,
+            extraRouteData: Object.entries(routeData.extraNodeData)
+              .map(([id, data]) => ({
+                id,
+                ...data
+              }))
+              .sort((a, b) => a.distance - b.distance)
+          },
+          obstacles,
+          tunnels
+        })
+      ],
+      { type: 'application/json' }
+    )
+    const href = URL.createObjectURL(blob)
+    const linkElem = document.createElement('a')
+    linkElem.href = href
+    linkElem.download = 'RouteData.json'
+    document.body.appendChild(linkElem)
+    linkElem.click()
+    document.body.removeChild(linkElem)
+  }, [routeData, obstacles, tunnels])
+
   return (
     <MapContainer
       center={COORDS_OSNABRUECK}
@@ -236,6 +280,14 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
           variant='contained'
           color='primary'
           startIcon={<DownloadIcon />}
+          disabled={
+            !routeData ||
+            !obstacles ||
+            !tunnels ||
+            fetchingRoute ||
+            fetchingObstacles
+          }
+          onClick={downloadRouteData}
         >
           Download route data
         </Button>
