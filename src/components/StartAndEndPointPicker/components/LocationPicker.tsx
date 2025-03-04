@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { Autocomplete, TextField } from '@mui/material'
-import * as Nominatim from 'nominatim-browser'
-import type { NominatimResponse, GeocodeRequest } from 'nominatim-browser'
+import NominatimApi from '../../../nominatim-api'
+import type { PlaceOutput } from '../../../nominatim-api/types'
 
 interface Props {
   label: string
@@ -10,13 +10,16 @@ interface Props {
 
 const COORDS_REGEX = /(\d+(?:.\d+)?),\s*(\d+(?:.\d+)?)/
 
+const nominatimApi = new NominatimApi()
+
 export default function LocationPicker({ label, onLocationUpdate }: Props) {
-  const [selectedLocation, setSelectedLocation] =
-    useState<NominatimResponse | null>(null)
-  const [searchResults, setSearchResults] = useState<NominatimResponse[]>([])
+  const [selectedLocation, setSelectedLocation] = useState<PlaceOutput | null>(
+    null
+  )
+  const [searchResults, setSearchResults] = useState<PlaceOutput[]>([])
 
   const setCoordinatesOrSearchForLocation = useCallback(
-    async (coordsOrLocationName: string | NominatimResponse | null) => {
+    async (coordsOrLocationName: string | PlaceOutput | null) => {
       if (!coordsOrLocationName) {
         onLocationUpdate(null)
         setSearchResults([])
@@ -39,16 +42,29 @@ export default function LocationPicker({ label, onLocationUpdate }: Props) {
         const [, lat, lon] = match
         if (!lat || !lon) return
         onLocationUpdate([Number(lat), Number(lon)])
-        const reverseResponse = await Nominatim.reverseGeocode({ lat, lon })
+        const reverseResponse = await nominatimApi.reverse({ lat, lon })
         setSearchResults([reverseResponse])
         setSelectedLocation(reverseResponse)
       } else {
         // Case 3: User wants to search for a location
-        const request: GeocodeRequest = {
+        const response = await nominatimApi.search({
           q: coordsOrLocationName
-        }
-        const response = await Nominatim.geocode(request)
-        setSearchResults(response)
+        })
+
+        setSearchResults(
+          // Deduplicate results
+          response.reduce(
+            (results: PlaceOutput[], newResult) =>
+              (
+                results.find(
+                  (result) => result.display_name === newResult.display_name
+                )
+              ) ?
+                results
+              : [...results, newResult],
+            []
+          )
+        )
       }
     },
     [setSearchResults]
