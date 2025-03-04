@@ -1,3 +1,5 @@
+import type { OSMID } from './osrm-api/types'
+
 interface LatLonObj {
   lat: number
   lon: number
@@ -21,4 +23,14 @@ interface OverpassWay {
   geometry: LatLonObj[]
 }
 
-export type { OverpassCount, OverpassWay }
+type NodeDataRecord = Record<
+  OSMID,
+  {
+    speed: number
+    coordinates: [number, number]
+    timestamp: number
+    distance: number
+  }
+>
+
+export type { OverpassCount, OverpassWay, NodeDataRecord }

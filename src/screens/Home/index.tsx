@@ -11,7 +11,7 @@ import OSRMApi from '../../osrm-api'
 
 import type { OSMID, Route } from '../../osrm-api/types'
 import type { LineString } from 'geojson'
-import type { OverpassCount, OverpassWay } from '../../types'
+import type { NodeDataRecord, OverpassCount, OverpassWay } from '../../types'
 
 const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
 
@@ -25,15 +25,7 @@ interface ObstacleOnRoute {
 export default function HomeScreen() {
   const [routeData, setRouteData] = useState<{
     route: Route<LineString, false, true>
-    extraNodeData: Record<
-      OSMID,
-      {
-        speed: number
-        coordinates: [number, number]
-        timestamp: number
-        distance: number
-      }
-    >
+    extraNodeData: NodeDataRecord
   } | null>(null)
   const [obstacles, setObstacles] = useState<ObstacleOnRoute[] | null>(null)
   const [tunnels, setTunnels] = useState<ObstacleOnRoute[] | null>(null)
@@ -270,7 +262,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
           onRoutePressed={lookupRoute}
           loadingText={routeButtonLoadingText}
         />
-        {routeData && <RouteLayer route={routeData.route} />}
+        {routeData && <RouteLayer nodeData={routeData.extraNodeData} />}
         {obstacles && <ObstaclesLayer obstacles={obstaclesToDraw} />}
       </LayersControl>
       <div className='leaflet-bottom leaflet-left'>

@@ -1,23 +1,45 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Paper } from '@mui/material'
 import { LayerGroup, LayersControl } from 'react-leaflet'
-import RouteLeg from './components/RouteLeg'
+import RoutePolyline from './components/RoutePolyline'
 
-import type { Route } from '../../osrm-api/types'
-import type { LineString } from 'geojson'
+import type { NodeDataRecord } from '../../types'
 
 interface Props {
-  route: Route<LineString, false, true>
+  nodeData: NodeDataRecord
 }
 
-function RouteLayer({ route }: Props) {
+function RouteLayer({ nodeData }: Props) {
+  const routeNodeArr = useMemo(
+    () =>
+      Object.entries(nodeData)
+        .map(([key, value]) => ({
+          id: Number(key),
+          ...value
+        }))
+        .sort((a, b) => a.distance - b.distance),
+    [nodeData]
+  )
+
   return (
     <>
       <LayersControl.Overlay checked name='Route'>
         <LayerGroup>
-          {route.legs.map((leg, i) => (
-            <RouteLeg key={i} leg={leg} />
-          ))}
+          {routeNodeArr.map((second, i) => {
+            if (i === 0) return null
+            const first = routeNodeArr[i - 1]!
+            return (
+              <RoutePolyline
+                key={i}
+                id1={first.id}
+                id2={second.id}
+                pos1={first.coordinates}
+                pos2={second.coordinates}
+                speed={second.speed}
+                distance={first.distance}
+              />
+            )
+          })}
         </LayerGroup>
       </LayersControl.Overlay>
       <div className='leaflet-bottom leaflet-right'>

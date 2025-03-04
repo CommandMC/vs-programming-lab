@@ -11,21 +11,18 @@ interface Props {
   pos1: Position
   pos2: Position
   speed: number
+  distance: number
 }
 
 const gradient = chroma.scale(['red', 'yellow', 'green'])
 
-function RoutePolyline({ id1, id2, pos1, pos2, speed }: Props) {
-  const speed_kmh = speed * 3.6
-  const relative_speed = Math.max(speed_kmh - 10, 0) / 120
+function RoutePolyline({ id1, id2, pos1, pos2, speed, distance }: Props) {
+  const relative_speed = Math.max(speed - 10, 0) / 120
   const color_at_speed = gradient(relative_speed)
 
   return (
     <Polyline
-      positions={[
-        pos1.toReversed() as [number, number],
-        pos2.toReversed() as [number, number]
-      ]}
+      positions={[pos1 as [number, number], pos2 as [number, number]]}
       color={color_at_speed.hex()}
     >
       <Popup>
@@ -34,7 +31,9 @@ function RoutePolyline({ id1, id2, pos1, pos2, speed }: Props) {
           <li>{id1}</li>
           <li>{id2}</li>
         </ul>
-        Speed: {speed_kmh.toFixed(2)} km/h
+        Speed: {speed.toFixed(2)} km/h
+        <br />
+        Distance: {(distance / 1000).toFixed(3)} km
       </Popup>
     </Polyline>
   )
