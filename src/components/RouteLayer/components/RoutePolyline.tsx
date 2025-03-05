@@ -33,7 +33,7 @@ function RoutePolyline({ id1, id2, pos1, pos2, speed, distance }: Props) {
         </ul>
         Speed: {speed.toFixed(2)} km/h
         <br />
-        Distance: {(distance / 1000).toFixed(3)} km
+        Distance on route: {(distance / 1000).toFixed(3)} km
       </Popup>
     </Polyline>
   )

@@ -23,6 +23,13 @@ interface OverpassWay {
   geometry: LatLonObj[]
 }
 
+interface OverpassWayBody {
+  type: 'way'
+  id: number
+  nodes: OSMID[]
+  tags: Record<string, string>
+}
+
 type NodeDataRecord = Record<
   OSMID,
   {
@@ -33,4 +40,4 @@ type NodeDataRecord = Record<
   }
 >
 
-export type { OverpassCount, OverpassWay, NodeDataRecord }
+export type { OverpassCount, OverpassWay, OverpassWayBody, NodeDataRecord }
