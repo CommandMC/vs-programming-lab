@@ -1,51 +1,22 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Paper } from '@mui/material'
 import { LayerGroup, LayersControl } from 'react-leaflet'
 import RoutePolyline from './components/RoutePolyline'
 
-import type { NodeDataRecord } from '../../types'
-import type { OSMID } from '../../osrm-api/types'
+import type { NodeData } from '../../types'
 
 interface Props {
-  nodeData: NodeDataRecord
-  speedLimits: Record<OSMID, string> | null
+  nodeData: NodeData[]
 }
 
-function RouteLayer({ nodeData, speedLimits }: Props) {
-  const routeNodeArr = useMemo(
-    () =>
-      Object.entries(nodeData)
-        .map(([key, value]) => ({
-          id: Number(key),
-          ...value
-        }))
-        .sort((a, b) => a.distance - b.distance),
-    [nodeData]
-  )
-
+function RouteLayer({ nodeData }: Props) {
   return (
     <>
       <LayersControl.Overlay checked name='Route'>
         <LayerGroup>
-          {routeNodeArr.map((second, i) => {
+          {nodeData.map((second, i) => {
             if (i === 0) return null
-            const first = routeNodeArr[i - 1]!
-            // OSRM tops out at ~110km/h, even if there isn't a speed limit / the speed limit is higher
-            // If that's the case, use the speed limit as the speed value instead
-            let speed: number = second.speed
-            const speedLimitAtNode = speedLimits?.[second.id]
-            if (speedLimitAtNode && second.speed >= 110) {
-              if (speedLimitAtNode === 'none') {
-                speed = 130
-              } else {
-                if (isNaN(Number(speedLimitAtNode))) {
-                  throw new Error(
-                    `Unparseable speed limit encountered: ${speedLimitAtNode}`
-                  )
-                }
-                speed = Number(speedLimitAtNode)
-              }
-            }
+            const first = nodeData[i - 1]!
             return (
               <RoutePolyline
                 key={i}
@@ -53,7 +24,7 @@ function RouteLayer({ nodeData, speedLimits }: Props) {
                 id2={second.id}
                 pos1={first.coordinates}
                 pos2={second.coordinates}
-                speed={speed}
+                speed={second.speed}
                 distance={first.distance}
               />
             )

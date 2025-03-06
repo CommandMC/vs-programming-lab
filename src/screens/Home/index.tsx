@@ -12,25 +12,22 @@ import OSRMApi from '../../osrm-api'
 import type { OSMID, Route } from '../../osrm-api/types'
 import type { LineString } from 'geojson'
 import type {
-  NodeDataRecord,
+  NodeData,
+  ObstacleOnRoute,
   OverpassCount,
   OverpassWay,
   OverpassWayBody
 } from '../../types'
+import bridgeWidthData from './bridge_width_data.json'
 
 const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
 
 const routing_api = new OSRMApi()
 
-interface ObstacleOnRoute {
-  obstacle: OverpassWay
-  nodeid: OSMID
-}
-
 export default function HomeScreen() {
   const [routeData, setRouteData] = useState<{
     route: Route<LineString, false, true>
-    extraNodeData: NodeDataRecord
+    extraNodeData: Record<OSMID, Omit<NodeData, 'id'>>
   } | null>(null)
   const [nodeSpeedLimits, setNodeSpeedLimits] = useState<Record<
     OSMID,
@@ -232,7 +229,10 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
             if (isTunnel) {
               newTunnels.push(newEntry)
             } else {
-              newObstacles.push(newEntry)
+              const widthData = (
+                bridgeWidthData as Record<OSMID, ObstacleOnRoute['widthData']>
+              )[obstacle.id]
+              if (widthData) newObstacles.push({ ...newEntry, widthData })
             }
           })
 
@@ -252,24 +252,39 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
   }, [fetchingRoute, fetchingObstacles])
 
   const obstaclesToDraw = useMemo(
-    () => [...(obstacles ?? []), ...(tunnels ?? [])].map((el) => el.obstacle),
+    () => [...(obstacles ?? []), ...(tunnels ?? [])],
     [obstacles, tunnels]
   )
 
+  const nodeDataWithUpdatedSpeeds = useMemo(() => {
+    if (!routeData) return []
+    return Object.entries(routeData?.extraNodeData)
+      .map(([key, value]) => ({
+        id: Number(key),
+        ...value
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .map((node) => {
+        // OSRM tops out at ~110km/h, even if there isn't a speed limit / the speed limit is higher
+        // If that's the case, use the speed limit as the speed value instead
+        const speedLimitAtNode = nodeSpeedLimits?.[node.id]
+        if (speedLimitAtNode && node.speed >= 110) {
+          if (speedLimitAtNode === 'none') {
+            node.speed = 130
+          } else {
+            node.speed = Number(speedLimitAtNode)
+          }
+        }
+        return node
+      })
+  }, [routeData, nodeSpeedLimits])
+
   const downloadRouteData = useCallback(() => {
-    if (!routeData || !obstacles || !tunnels) return
+    if (!nodeDataWithUpdatedSpeeds || !obstacles || !tunnels) return
     const blob = new Blob(
       [
         JSON.stringify({
-          routeData: {
-            route: routeData.route,
-            extraRouteData: Object.entries(routeData.extraNodeData)
-              .map(([id, data]) => ({
-                id,
-                ...data
-              }))
-              .sort((a, b) => a.distance - b.distance)
-          },
+          routeData: nodeDataWithUpdatedSpeeds,
           obstacles,
           tunnels
         })
@@ -283,7 +298,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
     document.body.appendChild(linkElem)
     linkElem.click()
     document.body.removeChild(linkElem)
-  }, [routeData, obstacles, tunnels])
+  }, [nodeDataWithUpdatedSpeeds, obstacles, tunnels])
 
   return (
     <MapContainer
@@ -301,12 +316,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
           onRoutePressed={lookupRoute}
           loadingText={routeButtonLoadingText}
         />
-        {routeData && (
-          <RouteLayer
-            nodeData={routeData.extraNodeData}
-            speedLimits={nodeSpeedLimits}
-          />
-        )}
+        {routeData && <RouteLayer nodeData={nodeDataWithUpdatedSpeeds} />}
         {obstacles && <ObstaclesLayer obstacles={obstaclesToDraw} />}
       </LayersControl>
       <div className='leaflet-bottom leaflet-left'>
@@ -320,6 +330,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
             !routeData ||
             !obstacles ||
             !tunnels ||
+            !nodeSpeedLimits ||
             fetchingRoute ||
             fetchingObstacles
           }

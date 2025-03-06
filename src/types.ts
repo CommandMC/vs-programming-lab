@@ -30,14 +30,29 @@ interface OverpassWayBody {
   tags: Record<string, string>
 }
 
-type NodeDataRecord = Record<
-  OSMID,
-  {
-    speed: number
-    coordinates: [number, number]
-    timestamp: number
-    distance: number
-  }
->
+interface NodeData {
+  id: OSMID
+  speed: number
+  coordinates: [number, number]
+  timestamp: number
+  distance: number
+}
 
-export type { OverpassCount, OverpassWay, OverpassWayBody, NodeDataRecord }
+interface ObstacleOnRoute {
+  obstacle: OverpassWay
+  nodeid: OSMID
+  widthData?: {
+    est_width: number
+    osm_width: number | null
+    bast_width: number | null
+    bwnr_tbwnr: string | null
+  }
+}
+
+export type {
+  OverpassCount,
+  OverpassWay,
+  OverpassWayBody,
+  NodeData,
+  ObstacleOnRoute
+}
