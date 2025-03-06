@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { LayersControl, MapContainer, TileLayer } from 'react-leaflet'
-import { Button } from '@mui/material'
-import { Download as DownloadIcon } from '@mui/icons-material'
 import haversine from 'haversine-distance'
 
 import StartAndEndPointPicker from '../../components/StartAndEndPointPicker'
@@ -19,6 +17,7 @@ import type {
   OverpassWayBody
 } from '../../types'
 import obstacleData from './obstacle_data.json'
+import DownloadRouteDataButton from '../../components/DownloadRouteDataButton'
 
 const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
 
@@ -282,27 +281,6 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
       })
   }, [routeData, nodeSpeedLimits])
 
-  const downloadRouteData = useCallback(() => {
-    if (!nodeDataWithUpdatedSpeeds || !obstacles || !tunnels) return
-    const blob = new Blob(
-      [
-        JSON.stringify({
-          routeData: nodeDataWithUpdatedSpeeds,
-          obstacles,
-          tunnels
-        })
-      ],
-      { type: 'application/json' }
-    )
-    const href = URL.createObjectURL(blob)
-    const linkElem = document.createElement('a')
-    linkElem.href = href
-    linkElem.download = 'RouteData.json'
-    document.body.appendChild(linkElem)
-    linkElem.click()
-    document.body.removeChild(linkElem)
-  }, [nodeDataWithUpdatedSpeeds, obstacles, tunnels])
-
   return (
     <MapContainer
       center={COORDS_OSNABRUECK}
@@ -322,26 +300,12 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         {routeData && <RouteLayer nodeData={nodeDataWithUpdatedSpeeds} />}
         {obstacles && <ObstaclesLayer obstacles={obstaclesToDraw} />}
       </LayersControl>
-      <div className='leaflet-bottom leaflet-left'>
-        <Button
-          className='leaflet-control'
-          sx={{ margin: 3 }}
-          variant='contained'
-          color='primary'
-          startIcon={<DownloadIcon />}
-          disabled={
-            !routeData ||
-            !obstacles ||
-            !tunnels ||
-            !nodeSpeedLimits ||
-            fetchingRoute ||
-            fetchingObstacles
-          }
-          onClick={downloadRouteData}
-        >
-          Download route data
-        </Button>
-      </div>
+      <DownloadRouteDataButton
+        disabled={fetchingRoute || fetchingObstacles}
+        nodeData={nodeDataWithUpdatedSpeeds}
+        obstacles={obstacles}
+        tunnels={tunnels}
+      />
     </MapContainer>
   )
 }
