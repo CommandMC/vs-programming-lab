@@ -14,41 +14,43 @@ function ObstaclesLayer({ obstacles }: Props) {
   return (
     <LayersControl.Overlay checked name='Obstacles'>
       <LayerGroup>
-        {obstacles.map(({ obstacle, widthData }) => {
+        {obstacles.map((obstacle) => {
           return (
             <Polyline
-              key={obstacle.id}
-              positions={obstacle.geometry.map(({ lat, lon }) => [lat, lon])}
+              key={obstacle.obstacle.id}
+              positions={obstacle.obstacle.geometry.map(({ lat, lon }) => [
+                lat,
+                lon
+              ])}
               pathOptions={{
                 color: prefersDarkMode ? 'white' : 'darkblue'
               }}
             >
               <Popup>
-                OSM ID: {obstacle.id}
-                {widthData?.est_width && (
-                  <>
-                    <br />
-                    Estimated width: {widthData.est_width} m
-                  </>
-                )}
-                {widthData?.osm_width && (
-                  <>
-                    <br />
-                    OSM width: {widthData.osm_width} m
-                  </>
-                )}
-                {widthData?.bast_width && (
-                  <>
-                    <br />
-                    BASt width: {widthData.bast_width.toFixed(2)} m
-                  </>
-                )}
-                {widthData?.bwnr_tbwnr && (
-                  <>
-                    <br />
-                    BWNR: {widthData.bwnr_tbwnr}
-                  </>
-                )}
+                OSM ID: {obstacle.obstacle.id}
+                {(
+                  [
+                    ['bast_name', 'BASt name', ''],
+                    ['osm_name', 'OSM name', ''],
+                    ['est_width', 'Estimated width', ' m'],
+                    ['osm_width', 'OSM width', ' m'],
+                    ['bast_width', 'BASt width', ' m'],
+                    ['bwnr_tbwnr', 'BWNR', '']
+                  ] as const
+                ).map(([prop, prefix, suffix]) => {
+                  if (!obstacle[prop]) {
+                    return null
+                  }
+                  return (
+                    <div key={prop}>
+                      {prefix}:{' '}
+                      {typeof obstacle[prop] === 'number' ?
+                        obstacle[prop].toFixed(2)
+                      : obstacle[prop]}
+                      {suffix}
+                    </div>
+                  )
+                })}
               </Popup>
             </Polyline>
           )

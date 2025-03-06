@@ -18,7 +18,7 @@ import type {
   OverpassWay,
   OverpassWayBody
 } from '../../types'
-import bridgeWidthData from './bridge_width_data.json'
+import obstacleData from './obstacle_data.json'
 
 const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
 
@@ -229,10 +229,13 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
             if (isTunnel) {
               newTunnels.push(newEntry)
             } else {
-              const widthData = (
-                bridgeWidthData as Record<OSMID, ObstacleOnRoute['widthData']>
+              const extraData = (
+                obstacleData as Record<
+                  OSMID,
+                  Omit<ObstacleOnRoute, 'obstacle' | 'nodeid'>
+                >
               )[obstacle.id]
-              if (widthData) newObstacles.push({ ...newEntry, widthData })
+              if (extraData) newObstacles.push({ ...newEntry, ...extraData })
             }
           })
 

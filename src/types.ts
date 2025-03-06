@@ -41,12 +41,12 @@ interface NodeData {
 interface ObstacleOnRoute {
   obstacle: OverpassWay
   nodeid: OSMID
-  widthData?: {
-    est_width: number
-    osm_width: number | null
-    bast_width: number | null
-    bwnr_tbwnr: string | null
-  }
+  osm_name?: string | null
+  bast_name?: string | null
+  est_width?: number
+  osm_width?: number | null
+  bast_width?: number | null
+  bwnr_tbwnr?: string | null
 }
 
 export type {
