@@ -79,23 +79,11 @@ export default function HomeScreen() {
           [0]
         )
 
-      const nodeTimestamps = newRoute.routes[0].legs
-        .map((leg) => leg.annotation.duration)
-        .flat()
-        .reduce(
-          (previousValue, currentValue) => [
-            ...previousValue,
-            previousValue.at(-1)! + currentValue
-          ],
-          [0]
-        )
-
       const newNodeData: Record<
         OSMID,
         {
           speed: number
           coordinates: [number, number]
-          timestamp: number
           distance: number
         }
       > = {}
@@ -105,13 +93,11 @@ export default function HomeScreen() {
         .forEach((nodeid, i) => {
           const coords = nodeCoords[i]
           const speedAtNode = nodeSpeeds[i]
-          const timestamp = nodeTimestamps[i]
           const distance = nodeDistances[i]
-          if (!coords || !speedAtNode || !timestamp || !distance) return
+          if (!coords || !speedAtNode || !distance) return
           newNodeData[nodeid] = {
             coordinates: coords.toReversed() as [number, number],
             speed: speedAtNode,
-            timestamp,
             distance
           }
         })

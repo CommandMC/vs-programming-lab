@@ -34,7 +34,6 @@ interface NodeData {
   id: OSMID
   speed: number
   coordinates: [number, number]
-  timestamp: number
   distance: number
 }
 
