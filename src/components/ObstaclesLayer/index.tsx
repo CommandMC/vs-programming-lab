@@ -28,6 +28,8 @@ function ObstaclesLayer({ obstacles }: Props) {
             >
               <Popup>
                 OSM ID: {obstacle.obstacle.id}
+                <br />
+                Nearest node on route: {obstacle.nodeid}
                 {(
                   [
                     ['bast_name', 'BASt name', ''],

@@ -68,6 +68,10 @@ export default function HomeScreen() {
       // very first node's speed to 0
       nodeSpeeds.unshift(0)
 
+      const nodeSegmentLengths = newRoute.routes[0].legs
+        .map((leg) => leg.annotation.distance)
+        .flat()
+
       const nodeDistances = newRoute.routes[0].legs
         .map((leg) => leg.annotation.distance)
         .flat()
@@ -84,7 +88,8 @@ export default function HomeScreen() {
         {
           speed: number
           coordinates: [number, number]
-          distance: number
+          distanceAlongRoute: number
+          segmentLength: number
         }
       > = {}
       newRoute.routes[0].legs
@@ -93,12 +98,15 @@ export default function HomeScreen() {
         .forEach((nodeid, i) => {
           const coords = nodeCoords[i]
           const speedAtNode = nodeSpeeds[i]
-          const distance = nodeDistances[i]
-          if (!coords || !speedAtNode || !distance) return
+          const distanceAlongRoute = nodeDistances[i]
+          const segmentLength = nodeSegmentLengths[i]
+          if (!coords || !speedAtNode || !distanceAlongRoute || !segmentLength)
+            return
           newNodeData[nodeid] = {
             coordinates: coords.toReversed() as [number, number],
             speed: speedAtNode,
-            distance
+            distanceAlongRoute,
+            segmentLength
           }
         })
 
@@ -254,7 +262,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         id: Number(key),
         ...value
       }))
-      .sort((a, b) => a.distance - b.distance)
+      .sort((a, b) => a.distanceAlongRoute - b.distanceAlongRoute)
       .map((node) => {
         // OSRM tops out at ~110km/h, even if there isn't a speed limit / the speed limit is higher
         // If that's the case, use the speed limit as the speed value instead
@@ -269,6 +277,36 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         return node
       })
   }, [routeData, nodeSpeedLimits])
+
+  const distanceUnderBridge = useMemo(() => {
+    if (!nodeDataWithUpdatedSpeeds || !obstacles) return []
+    // OSM classifies separate lanes of a bridge as separate bridges. Thus, multiple OSM bridges might map onto the
+    // same bridge from BASt. In that case, the width reported by BASt will be the full width of all lanes combined.
+    // To avoid double-counting, we keep track of which BASt names we've already used.
+    const usedBastNames: string[] = []
+    const obstructedDistance: Record<OSMID, number> = {}
+    obstacles.forEach((obstacle) => {
+      const relevantNode = nodeDataWithUpdatedSpeeds.find(
+        (node) => node.id === obstacle.nodeid
+      )!
+      let distanceUnderBridge: number
+      if (obstacle.bast_width && obstacle.bast_name) {
+        if (!usedBastNames.includes(obstacle.bast_name)) {
+          usedBastNames.push(obstacle.bast_name)
+          distanceUnderBridge = obstacle.bast_width
+        } else {
+          // Skip the bridge if we've already seen it
+          distanceUnderBridge = 0
+        }
+      } else {
+        distanceUnderBridge = obstacle.osm_width ?? obstacle.est_width!
+      }
+      const obstructedDistanceForNode = obstructedDistance[relevantNode.id]
+      obstructedDistance[relevantNode.id] =
+        distanceUnderBridge + (obstructedDistanceForNode ?? 0)
+    })
+    return obstructedDistance
+  }, [nodeDataWithUpdatedSpeeds, obstacles])
 
   return (
     <MapContainer
@@ -286,7 +324,12 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
           onRoutePressed={lookupRoute}
           loadingText={routeButtonLoadingText}
         />
-        {routeData && <RouteLayer nodeData={nodeDataWithUpdatedSpeeds} />}
+        {routeData && (
+          <RouteLayer
+            nodeData={nodeDataWithUpdatedSpeeds}
+            distanceUnderBridge={distanceUnderBridge}
+          />
+        )}
         {obstacles && <ObstaclesLayer obstacles={obstaclesToDraw} />}
       </LayersControl>
       <DownloadRouteDataButton

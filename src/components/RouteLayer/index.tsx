@@ -4,12 +4,14 @@ import { LayerGroup, LayersControl } from 'react-leaflet'
 import RoutePolyline from './components/RoutePolyline'
 
 import type { NodeData } from '../../types'
+import type { OSMID } from '../../osrm-api/types'
 
 interface Props {
   nodeData: NodeData[]
+  distanceUnderBridge: Record<OSMID, number>
 }
 
-function RouteLayer({ nodeData }: Props) {
+function RouteLayer({ nodeData, distanceUnderBridge }: Props) {
   return (
     <>
       <LayersControl.Overlay checked name='Route'>
@@ -25,7 +27,8 @@ function RouteLayer({ nodeData }: Props) {
                 pos1={first.coordinates}
                 pos2={second.coordinates}
                 speed={second.speed}
-                distance={first.distance}
+                distance={first.distanceAlongRoute}
+                distanceUnderBridge={distanceUnderBridge[second.id]}
               />
             )
           })}

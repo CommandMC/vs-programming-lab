@@ -34,7 +34,8 @@ interface NodeData {
   id: OSMID
   speed: number
   coordinates: [number, number]
-  distance: number
+  distanceAlongRoute: number
+  segmentLength: number
 }
 
 interface ObstacleOnRoute {

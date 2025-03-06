@@ -12,11 +12,20 @@ interface Props {
   pos2: Position
   speed: number
   distance: number
+  distanceUnderBridge?: number
 }
 
 const gradient = chroma.scale(['red', 'yellow', 'green'])
 
-function RoutePolyline({ id1, id2, pos1, pos2, speed, distance }: Props) {
+function RoutePolyline({
+  id1,
+  id2,
+  pos1,
+  pos2,
+  speed,
+  distance,
+  distanceUnderBridge
+}: Props) {
   const relative_speed = Math.max(speed - 10, 0) / 120
   const color_at_speed = gradient(relative_speed)
 
@@ -34,6 +43,12 @@ function RoutePolyline({ id1, id2, pos1, pos2, speed, distance }: Props) {
         Speed: {speed.toFixed(2)} km/h
         <br />
         Distance on route: {(distance / 1000).toFixed(3)} km
+        {distanceUnderBridge && (
+          <>
+            <br />
+            Distance under bridge: {distanceUnderBridge.toFixed(2)} m
+          </>
+        )}
       </Popup>
     </Polyline>
   )
