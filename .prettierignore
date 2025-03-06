@@ -1,2 +1,2 @@
 pnpm-lock.yaml
-src/screens/Home/obstacle_data.json
+public/obstacle_data.json

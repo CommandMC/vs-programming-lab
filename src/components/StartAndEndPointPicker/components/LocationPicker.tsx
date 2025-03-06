@@ -12,7 +12,7 @@ const COORDS_REGEX = /(\d+(?:.\d+)?),\s*(\d+(?:.\d+)?)/
 
 const nominatimApi = new NominatimApi()
 
-export default function LocationPicker({ label, onLocationUpdate }: Props) {
+function LocationPicker({ label, onLocationUpdate }: Props) {
   const [selectedLocation, setSelectedLocation] = useState<PlaceOutput | null>(
     null
   )
@@ -96,3 +96,5 @@ export default function LocationPicker({ label, onLocationUpdate }: Props) {
     />
   )
 }
+
+export default React.memo(LocationPicker)

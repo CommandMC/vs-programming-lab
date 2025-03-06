@@ -16,7 +16,6 @@ import type {
   OverpassWay,
   OverpassWayBody
 } from '../../types'
-import obstacleData from './obstacle_data.json'
 import DownloadRouteDataButton from '../../components/DownloadRouteDataButton'
 
 const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
@@ -167,84 +166,88 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
 (.bridges; - .adjacent;)->.crossing;
 .crossing out ids geom;`
     console.log(query)
-    fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: 'data=' + encodeURIComponent(query)
-    })
+    const overpassQueryPromise = fetch(
+      'https://overpass-api.de/api/interpreter',
+      {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(query)
+      }
+    )
       .then((data) => data.json())
       .then(
-        ({
-          elements
-        }: {
-          elements: (OverpassCount | OverpassWay | OverpassWayBody)[]
-        }) => {
-          // Update node speed based on way speed limits (OSRM won't give us speeds faster than ~110km/h)
-          const routeWaysCount = Number(
-            (elements[0] as OverpassCount).tags.ways
-          )
-          const routeWays = elements.slice(
-            1,
-            routeWaysCount + 1
-          ) as OverpassWayBody[]
-          setNodeSpeedLimits(
-            Object.fromEntries(
-              routeWays
-                .map((way) =>
-                  way.nodes
-                    .filter((nodeid) => nodeid in routeData.extraNodeData)
-                    .map((nodeid) => [nodeid, way.tags['maxspeed']])
-                )
-                .flat()
-            )
-          )
-
-          const tunnelCount = Number(
-            (elements[routeWaysCount + 1] as OverpassCount).tags.ways
-          )
-          const obstacles = elements.slice(routeWaysCount + 2) as OverpassWay[]
-
-          const newObstacles: ObstacleOnRoute[] = []
-          const newTunnels: ObstacleOnRoute[] = []
-
-          obstacles.forEach((obstacle, i) => {
-            const isTunnel = i < tunnelCount
-            const center: [number, number] = [
-              (obstacle.bounds.minlat + obstacle.bounds.maxlat) / 2,
-              (obstacle.bounds.minlon + obstacle.bounds.maxlon) / 2
-            ]
-            const nearestNode = Object.entries(routeData.extraNodeData)
-              .map(([id, data]) => ({
-                id: Number(id),
-                data,
-                distance: haversine(center, data.coordinates)
-              }))
-              .reduce((prev, curr) =>
-                prev.distance < curr.distance ? prev : curr
-              )
-            const newEntry = {
-              obstacle,
-              nodeid: Number(nearestNode.id)
-            }
-            if (isTunnel) {
-              newTunnels.push(newEntry)
-            } else {
-              const extraData = (
-                obstacleData as Record<
-                  OSMID,
-                  Omit<ObstacleOnRoute, 'obstacle' | 'nodeid'>
-                >
-              )[obstacle.id]
-              if (extraData) newObstacles.push({ ...newEntry, ...extraData })
-            }
-          })
-
-          setObstacles(newObstacles)
-          setTunnels(newTunnels)
-          console.log('Obstacles updated:', newObstacles)
-          console.log('Tunnels updated:', newTunnels)
-          setFetchingObstacles(false)
-        }
+        ({ elements }) =>
+          elements as (OverpassCount | OverpassWay | OverpassWayBody)[]
       )
+    const obstacleDataImportPromise = fetch('/obstacle_data.json')
+      .then((res) => res.json())
+      .then(
+        (json) =>
+          json as Record<OSMID, Omit<ObstacleOnRoute, 'obstacle' | 'nodeid'>>
+      )
+
+    Promise.all([overpassQueryPromise, obstacleDataImportPromise]).then(
+      ([elements, obstacleData]) => {
+        // Update node speed based on way speed limits (OSRM won't give us speeds faster than ~110km/h)
+        const routeWaysCount = Number((elements[0] as OverpassCount).tags.ways)
+        const routeWays = elements.slice(
+          1,
+          routeWaysCount + 1
+        ) as OverpassWayBody[]
+
+        setNodeSpeedLimits(
+          Object.fromEntries(
+            routeWays
+              .map((way) =>
+                way.nodes
+                  .filter((nodeid) => nodeid in routeData.extraNodeData)
+                  .map((nodeid) => [nodeid, way.tags['maxspeed']])
+              )
+              .flat()
+          )
+        )
+
+        const tunnelCount = Number(
+          (elements[routeWaysCount + 1] as OverpassCount).tags.ways
+        )
+        const obstacles = elements.slice(routeWaysCount + 2) as OverpassWay[]
+
+        const newObstacles: ObstacleOnRoute[] = []
+        const newTunnels: ObstacleOnRoute[] = []
+
+        obstacles.forEach((obstacle, i) => {
+          const isTunnel = i < tunnelCount
+          const center: [number, number] = [
+            (obstacle.bounds.minlat + obstacle.bounds.maxlat) / 2,
+            (obstacle.bounds.minlon + obstacle.bounds.maxlon) / 2
+          ]
+          const nearestNode = Object.entries(routeData.extraNodeData)
+            .map(([id, data]) => ({
+              id: Number(id),
+              data,
+              distance: haversine(center, data.coordinates)
+            }))
+            .reduce((prev, curr) =>
+              prev.distance < curr.distance ? prev : curr
+            )
+          const newEntry = {
+            obstacle,
+            nodeid: Number(nearestNode.id)
+          }
+          if (isTunnel) {
+            newTunnels.push(newEntry)
+          } else {
+            const extraData = obstacleData[obstacle.id]
+            if (extraData) newObstacles.push({ ...newEntry, ...extraData })
+          }
+        })
+
+        setObstacles(newObstacles)
+        setTunnels(newTunnels)
+        console.log('Obstacles updated:', newObstacles)
+        console.log('Tunnels updated:', newTunnels)
+        setFetchingObstacles(false)
+      }
+    )
   }, [routeData])
 
   const routeButtonLoadingText = useMemo(() => {
@@ -260,7 +263,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
 
   const nodeDataWithUpdatedSpeeds = useMemo(() => {
     if (!routeData) return []
-    return Object.entries(routeData?.extraNodeData)
+    return Object.entries(routeData.extraNodeData)
       .map(([key, value]) => ({
         id: Number(key),
         ...value

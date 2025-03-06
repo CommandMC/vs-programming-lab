@@ -13,10 +13,7 @@ interface Props {
   loadingText?: string
 }
 
-export default function StartAndEndPointPicker({
-  onRoutePressed,
-  loadingText
-}: Props) {
+function StartAndEndPointPicker({ onRoutePressed, loadingText }: Props) {
   const [startPoint, setStartPoint] = useState<[number, number] | null>(null)
   const [endPoint, setEndPoint] = useState<[number, number] | null>(null)
 
@@ -75,3 +72,5 @@ export default function StartAndEndPointPicker({
     </>
   )
 }
+
+export default React.memo(StartAndEndPointPicker)
