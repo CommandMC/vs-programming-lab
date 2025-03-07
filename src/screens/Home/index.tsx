@@ -278,13 +278,14 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
       })
   }, [routeData, nodeSpeedLimits])
 
-  const distanceUnderBridge = useMemo(() => {
-    if (!nodeDataWithUpdatedSpeeds || !obstacles) return []
+  const [distanceUnderBridge, timeUnderBridge] = useMemo(() => {
+    if (!nodeDataWithUpdatedSpeeds.length || !obstacles) return [[], []]
     // OSM classifies separate lanes of a bridge as separate bridges. Thus, multiple OSM bridges might map onto the
     // same bridge from BASt. In that case, the width reported by BASt will be the full width of all lanes combined.
     // To avoid double-counting, we keep track of which BASt names we've already used.
     const usedBastNames: string[] = []
     const obstructedDistance: Record<OSMID, number> = {}
+    const obstructedTime: Record<OSMID, number> = {}
     obstacles.forEach((obstacle) => {
       const relevantNode = nodeDataWithUpdatedSpeeds.find(
         (node) => node.id === obstacle.nodeid
@@ -301,11 +302,18 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
       } else {
         distanceUnderBridge = obstacle.osm_width ?? obstacle.est_width!
       }
+      const segmentTime =
+        relevantNode.segmentLength / (relevantNode.speed / 3.6)
+      const bridgeRatio = distanceUnderBridge / relevantNode.segmentLength
+      const timeUnderBridge = segmentTime * bridgeRatio
       const obstructedDistanceForNode = obstructedDistance[relevantNode.id]
       obstructedDistance[relevantNode.id] =
         distanceUnderBridge + (obstructedDistanceForNode ?? 0)
+      const obstructedTimeForNode = obstructedTime[relevantNode.id]
+      obstructedTime[relevantNode.id] =
+        timeUnderBridge + (obstructedTimeForNode ?? 0)
     })
-    return obstructedDistance
+    return [obstructedDistance, obstructedTime]
   }, [nodeDataWithUpdatedSpeeds, obstacles])
 
   return (
@@ -328,6 +336,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
           <RouteLayer
             nodeData={nodeDataWithUpdatedSpeeds}
             distanceUnderBridge={distanceUnderBridge}
+            timeUnderBridge={timeUnderBridge}
           />
         )}
         {obstacles && <ObstaclesLayer obstacles={obstaclesToDraw} />}
@@ -337,6 +346,8 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         nodeData={nodeDataWithUpdatedSpeeds}
         obstacles={obstacles}
         tunnels={tunnels}
+        distanceUnderBridge={distanceUnderBridge}
+        timeUnderBridge={timeUnderBridge}
       />
     </MapContainer>
   )

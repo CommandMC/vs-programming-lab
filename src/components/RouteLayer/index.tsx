@@ -5,13 +5,15 @@ import RoutePolyline from './components/RoutePolyline'
 
 import type { NodeData } from '../../types'
 import type { OSMID } from '../../osrm-api/types'
+import TimeUnderBridgeLine from './components/TimeUnderBridgeLine'
 
 interface Props {
   nodeData: NodeData[]
   distanceUnderBridge: Record<OSMID, number>
+  timeUnderBridge: Record<OSMID, number>
 }
 
-function RouteLayer({ nodeData, distanceUnderBridge }: Props) {
+function RouteLayer({ nodeData, distanceUnderBridge, timeUnderBridge }: Props) {
   return (
     <>
       <LayersControl.Overlay checked name='Route'>
@@ -27,8 +29,26 @@ function RouteLayer({ nodeData, distanceUnderBridge }: Props) {
                 pos1={first.coordinates}
                 pos2={second.coordinates}
                 speed={second.speed}
-                distance={first.distanceAlongRoute}
+                length={second.segmentLength}
+                distanceAlongRoute={first.distanceAlongRoute}
+                timeUnderBridge={timeUnderBridge[second.id] ?? 0}
                 distanceUnderBridge={distanceUnderBridge[second.id]}
+              />
+            )
+          })}
+        </LayerGroup>
+      </LayersControl.Overlay>
+      <LayersControl.Overlay name='Time under bridge'>
+        <LayerGroup>
+          {nodeData.map((second, i) => {
+            if (i === 0) return null
+            const first = nodeData[i - 1]!
+            return (
+              <TimeUnderBridgeLine
+                key={i}
+                pos1={first.coordinates}
+                pos2={second.coordinates}
+                timeUnderBridge={timeUnderBridge[second.id] ?? 0}
               />
             )
           })}

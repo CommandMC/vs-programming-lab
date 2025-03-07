@@ -11,7 +11,9 @@ interface Props {
   pos1: Position
   pos2: Position
   speed: number
-  distance: number
+  length: number
+  distanceAlongRoute: number
+  timeUnderBridge?: number
   distanceUnderBridge?: number
 }
 
@@ -23,11 +25,14 @@ function RoutePolyline({
   pos1,
   pos2,
   speed,
-  distance,
+  length,
+  distanceAlongRoute,
+  timeUnderBridge,
   distanceUnderBridge
 }: Props) {
   const relative_speed = Math.max(speed - 10, 0) / 120
   const color_at_speed = gradient(relative_speed)
+  const time_in_segment = length / (speed / 3.6)
 
   return (
     <Polyline
@@ -42,7 +47,16 @@ function RoutePolyline({
         </ul>
         Speed: {speed.toFixed(2)} km/h
         <br />
-        Distance on route: {(distance / 1000).toFixed(3)} km
+        Time spent in segment: {time_in_segment.toFixed(2)} s
+        {timeUnderBridge !== undefined && (
+          <>
+            <br />
+            Time under bridge: {timeUnderBridge.toFixed(2)} s
+          </>
+        )}
+        <br />
+        Segment length: {length.toFixed(2)} m<br />
+        Distance on route: {(distanceAlongRoute / 1000).toFixed(3)} km
         {distanceUnderBridge && (
           <>
             <br />

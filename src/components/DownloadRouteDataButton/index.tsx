@@ -2,26 +2,35 @@ import React, { useCallback } from 'react'
 import { Button } from '@mui/material'
 import { Download as DownloadIcon } from '@mui/icons-material'
 import type { NodeData, ObstacleOnRoute } from '../../types'
+import type { OSMID } from '../../osrm-api/types'
 
 interface Props {
   disabled: boolean
   nodeData: NodeData[]
   obstacles: ObstacleOnRoute[] | null
   tunnels: ObstacleOnRoute[] | null
+  distanceUnderBridge: Record<OSMID, number>
+  timeUnderBridge: Record<OSMID, number>
 }
 
 function DownloadRouteDataButton({
   disabled,
   nodeData,
   obstacles,
-  tunnels
+  tunnels,
+  distanceUnderBridge,
+  timeUnderBridge
 }: Props) {
   const downloadRouteData = useCallback(() => {
     if (!nodeData || !obstacles || !tunnels) return
     const blob = new Blob(
       [
         JSON.stringify({
-          routeData: nodeData,
+          routeData: nodeData.map((node) => ({
+            ...node,
+            distanceUnderBridge: distanceUnderBridge[node.id] ?? 0,
+            timeUnderBridge: timeUnderBridge[node.id] ?? 0
+          })),
           obstacles,
           tunnels
         })
@@ -35,7 +44,7 @@ function DownloadRouteDataButton({
     document.body.appendChild(linkElem)
     linkElem.click()
     document.body.removeChild(linkElem)
-  }, [nodeData, obstacles, tunnels])
+  }, [nodeData, obstacles, tunnels, distanceUnderBridge, timeUnderBridge])
 
   return (
     <div className='leaflet-bottom leaflet-left'>
