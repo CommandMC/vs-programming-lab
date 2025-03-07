@@ -5,6 +5,8 @@ import haversine from 'haversine-distance'
 import StartAndEndPointPicker from '../../components/StartAndEndPointPicker'
 import RouteLayer from '../../components/RouteLayer'
 import ObstaclesLayer from '../../components/ObstaclesLayer'
+import DownloadRouteDataButton from '../../components/DownloadRouteDataButton'
+import Traces from '../../components/Traces'
 import OSRMApi from '../../osrm-api'
 
 import type { OSMID, Route } from '../../osrm-api/types'
@@ -16,7 +18,6 @@ import type {
   OverpassWay,
   OverpassWayBody
 } from '../../types'
-import DownloadRouteDataButton from '../../components/DownloadRouteDataButton'
 
 const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
 
@@ -286,6 +287,12 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
     const usedBastNames: string[] = []
     const obstructedDistance: Record<OSMID, number> = {}
     const obstructedTime: Record<OSMID, number> = {}
+
+    nodeDataWithUpdatedSpeeds.forEach(({ id }) => {
+      obstructedDistance[id] = 0
+      obstructedTime[id] = 0
+    })
+
     obstacles.forEach((obstacle) => {
       const relevantNode = nodeDataWithUpdatedSpeeds.find(
         (node) => node.id === obstacle.nodeid
@@ -306,49 +313,70 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         relevantNode.segmentLength / (relevantNode.speed / 3.6)
       const bridgeRatio = distanceUnderBridge / relevantNode.segmentLength
       const timeUnderBridge = segmentTime * bridgeRatio
-      const obstructedDistanceForNode = obstructedDistance[relevantNode.id]
+      const obstructedDistanceForNode = obstructedDistance[relevantNode.id]!
       obstructedDistance[relevantNode.id] =
-        distanceUnderBridge + (obstructedDistanceForNode ?? 0)
-      const obstructedTimeForNode = obstructedTime[relevantNode.id]
-      obstructedTime[relevantNode.id] =
-        timeUnderBridge + (obstructedTimeForNode ?? 0)
+        distanceUnderBridge + obstructedDistanceForNode
+      const obstructedTimeForNode = obstructedTime[relevantNode.id]!
+      obstructedTime[relevantNode.id] = timeUnderBridge + obstructedTimeForNode
     })
     return [obstructedDistance, obstructedTime]
   }, [nodeDataWithUpdatedSpeeds, obstacles])
 
+  const [burstLength, maxRtt, pktsToRttNorm] = useMemo(() => {
+    const burstLength: Record<OSMID, number> = {}
+    const maxRtt: Record<OSMID, number> = {}
+    const pktsToRttNorm: Record<OSMID, number> = {}
+    Object.entries(timeUnderBridge).forEach(([idStr, time]) => {
+      const id = Number(idStr)
+      burstLength[id] = time * 56.52436265101327 + 1.7883695471513976
+      maxRtt[id] = time * 328.81459346950214 + 222.29597475535095
+      pktsToRttNorm[id] = maxRtt[id]! * 0.08430682594537886 - 8.401958514887447
+    })
+    return [burstLength, maxRtt, pktsToRttNorm]
+  }, [timeUnderBridge])
+
   return (
-    <MapContainer
-      center={COORDS_OSNABRUECK}
-      zoom={11}
-      style={{ height: '100vh', width: '100%', padding: 0 }}
-    >
-      <TileLayer
-        className='map-tiles'
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-      />
-      <LayersControl position='topright'>
-        <StartAndEndPointPicker
-          onRoutePressed={lookupRoute}
-          loadingText={routeButtonLoadingText}
+    <>
+      <MapContainer
+        center={COORDS_OSNABRUECK}
+        zoom={11}
+        style={{ height: '100vh', width: '100%', padding: 0 }}
+      >
+        <TileLayer
+          className='map-tiles'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         />
-        {routeData && (
-          <RouteLayer
-            nodeData={nodeDataWithUpdatedSpeeds}
-            distanceUnderBridge={distanceUnderBridge}
-            timeUnderBridge={timeUnderBridge}
+        <LayersControl position='topright'>
+          <StartAndEndPointPicker
+            onRoutePressed={lookupRoute}
+            loadingText={routeButtonLoadingText}
           />
-        )}
-        {obstacles && <ObstaclesLayer obstacles={obstaclesToDraw} />}
-      </LayersControl>
-      <DownloadRouteDataButton
-        disabled={fetchingRoute || fetchingObstacles}
-        nodeData={nodeDataWithUpdatedSpeeds}
-        obstacles={obstacles}
-        tunnels={tunnels}
-        distanceUnderBridge={distanceUnderBridge}
+          {routeData && (
+            <RouteLayer
+              nodeData={nodeDataWithUpdatedSpeeds}
+              distanceUnderBridge={distanceUnderBridge}
+              timeUnderBridge={timeUnderBridge}
+            />
+          )}
+          {obstacles && <ObstaclesLayer obstacles={obstaclesToDraw} />}
+        </LayersControl>
+        <DownloadRouteDataButton
+          disabled={fetchingRoute || fetchingObstacles}
+          nodeData={nodeDataWithUpdatedSpeeds}
+          obstacles={obstacles}
+          tunnels={tunnels}
+          distanceUnderBridge={distanceUnderBridge}
+          timeUnderBridge={timeUnderBridge}
+        />
+      </MapContainer>
+      <Traces
         timeUnderBridge={timeUnderBridge}
+        nodeDataWithUpdatedSpeeds={nodeDataWithUpdatedSpeeds}
+        burstLength={burstLength}
+        maxRtt={maxRtt}
+        pktsToRttNorm={pktsToRttNorm}
       />
-    </MapContainer>
+    </>
   )
 }
