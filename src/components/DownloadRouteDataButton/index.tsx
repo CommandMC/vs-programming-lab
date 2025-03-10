@@ -26,7 +26,7 @@ function DownloadRouteDataButton({
 
     const absoluteTimes: Record<OSMID, number> = Object.fromEntries(
       nodeData
-        .map((nodeData) => nodeData.distanceAlongRoute / (nodeData.speed / 3.6))
+        .map((nodeData) => nodeData.segmentLength / (nodeData.speed / 3.6))
         .reduce(
           (previousValue, currentValue) => [
             ...previousValue,
