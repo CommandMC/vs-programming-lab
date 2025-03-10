@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { LayersControl, MapContainer, TileLayer } from 'react-leaflet'
 import haversine from 'haversine-distance'
 
-import StartAndEndPointPicker from '../../components/StartAndEndPointPicker'
+import RouteParametersPicker from '../../components/RouteParametersPicker'
 import RouteLayer from '../../components/RouteLayer'
 import ObstaclesLayer from '../../components/ObstaclesLayer'
 import DownloadRouteDataButton from '../../components/DownloadRouteDataButton'
@@ -24,6 +24,7 @@ const COORDS_OSNABRUECK: [number, number] = [52.2719595, 8.047635]
 const routing_api = new OSRMApi()
 
 export default function HomeScreen() {
+  const [maxSpeed, setMaxSpeed] = useState(130)
   const [routeData, setRouteData] = useState<{
     route: Route<LineString, false, true>
     extraNodeData: Record<OSMID, Omit<NodeData, 'id'>>
@@ -38,7 +39,12 @@ export default function HomeScreen() {
   const [fetchingObstacles, setFetchingObstacles] = useState(false)
 
   const lookupRoute = useCallback(
-    async (start: [number, number], end: [number, number]) => {
+    async (
+      start: [number, number],
+      end: [number, number],
+      maxSpeed: number
+    ) => {
+      setMaxSpeed(maxSpeed)
       setRouteData(null)
       setFetchingRoute(true)
       const newRoute = await routing_api.route_request({
@@ -270,11 +276,12 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         const speedLimitAtNode = nodeSpeedLimits?.[node.id]
         if (speedLimitAtNode && node.speed >= 110) {
           if (speedLimitAtNode === 'none') {
-            node.speed = 130
+            node.speed = Infinity
           } else {
             node.speed = Number(speedLimitAtNode)
           }
         }
+        node.speed = Math.min(maxSpeed, node.speed)
         return node
       })
   }, [routeData, nodeSpeedLimits])
@@ -348,12 +355,13 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
           url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         />
         <LayersControl position='topright'>
-          <StartAndEndPointPicker
+          <RouteParametersPicker
             onRoutePressed={lookupRoute}
             loadingText={routeButtonLoadingText}
           />
           {routeData && (
             <RouteLayer
+              maxSpeed={maxSpeed}
               nodeData={nodeDataWithUpdatedSpeeds}
               distanceUnderBridge={distanceUnderBridge}
               timeUnderBridge={timeUnderBridge}

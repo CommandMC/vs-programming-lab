@@ -4,6 +4,7 @@ import NominatimApi from '../../../nominatim-api'
 import type { PlaceOutput } from '../../../nominatim-api/types'
 
 interface Props {
+  ref: React.RefObject<HTMLDivElement | null>
   label: string
   onLocationUpdate: (newCoordinates: [number, number] | null) => void
 }
@@ -12,7 +13,7 @@ const COORDS_REGEX = /(\d+(?:.\d+)?),\s*(\d+(?:.\d+)?)/
 
 const nominatimApi = new NominatimApi()
 
-function LocationPicker({ label, onLocationUpdate }: Props) {
+function LocationPicker({ ref, label, onLocationUpdate }: Props) {
   const [selectedLocation, setSelectedLocation] = useState<PlaceOutput | null>(
     null
   )
@@ -75,6 +76,7 @@ function LocationPicker({ label, onLocationUpdate }: Props) {
       value={selectedLocation}
       renderInput={(params) => (
         <TextField
+          ref={ref}
           label={label}
           helperText='Insert coordinates or search for a location'
           {...params}

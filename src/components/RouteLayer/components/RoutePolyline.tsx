@@ -10,6 +10,7 @@ interface Props {
   id2: OSMID
   pos1: Position
   pos2: Position
+  maxSpeed: number
   speed: number
   length: number
   distanceAlongRoute: number
@@ -24,13 +25,14 @@ function RoutePolyline({
   id2,
   pos1,
   pos2,
+  maxSpeed,
   speed,
   length,
   distanceAlongRoute,
   timeUnderBridge,
   distanceUnderBridge
 }: Props) {
-  const relative_speed = Math.max(speed - 10, 0) / 120
+  const relative_speed = Math.max(speed - 10, 0) / (maxSpeed - 10)
   const color_at_speed = gradient(relative_speed)
   const time_in_segment = length / (speed / 3.6)
 
@@ -57,7 +59,7 @@ function RoutePolyline({
         <br />
         Segment length: {length.toFixed(2)} m<br />
         Distance on route: {(distanceAlongRoute / 1000).toFixed(3)} km
-        {distanceUnderBridge && (
+        {distanceUnderBridge !== undefined && (
           <>
             <br />
             Distance under bridge: {distanceUnderBridge.toFixed(2)} m

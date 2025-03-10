@@ -1,5 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import { Button, Paper } from '@mui/material'
+import React, { useEffect, useRef, useState } from 'react'
+import {
+  Box,
+  Button,
+  Input,
+  InputAdornment,
+  Paper,
+  Typography
+} from '@mui/material'
 import L from 'leaflet'
 import { LayerGroup, LayersControl, Marker, Popup, useMap } from 'react-leaflet'
 
@@ -8,14 +15,20 @@ import LocationPicker from './components/LocationPicker'
 interface Props {
   onRoutePressed: (
     startCoords: [number, number],
-    endCoords: [number, number]
+    endCoords: [number, number],
+    maxSpeed: number
   ) => void
   loadingText?: string
 }
 
-function StartAndEndPointPicker({ onRoutePressed, loadingText }: Props) {
+function RouteParametersPicker({ onRoutePressed, loadingText }: Props) {
   const [startPoint, setStartPoint] = useState<[number, number] | null>(null)
   const [endPoint, setEndPoint] = useState<[number, number] | null>(null)
+  const [maxSpeed, setMaxSpeed] = useState(130)
+
+  const startRef = useRef<HTMLDivElement>(null)
+  const endRef = useRef<HTMLDivElement>(null)
+  const maxSpeedRef = useRef<HTMLDivElement>(null)
 
   const map = useMap()
 
@@ -29,6 +42,13 @@ function StartAndEndPointPicker({ onRoutePressed, loadingText }: Props) {
     }
   }, [startPoint, endPoint])
 
+  useEffect(() => {
+    if (startRef.current) L.DomEvent.disableClickPropagation(startRef.current)
+    if (endRef.current) L.DomEvent.disableClickPropagation(endRef.current)
+    if (maxSpeedRef.current)
+      L.DomEvent.disableClickPropagation(maxSpeedRef.current)
+  }, [startRef.current, endRef.current, maxSpeedRef.current])
+
   return (
     <>
       <div className='leaflet-top leaflet-left'>
@@ -37,10 +57,28 @@ function StartAndEndPointPicker({ onRoutePressed, loadingText }: Props) {
           sx={{ padding: 2, display: 'flex', flexDirection: 'column', gap: 3 }}
         >
           <LocationPicker
+            ref={startRef}
             label='Start location'
             onLocationUpdate={setStartPoint}
           />
-          <LocationPicker label='End location' onLocationUpdate={setEndPoint} />
+          <LocationPicker
+            ref={endRef}
+            label='End location'
+            onLocationUpdate={setEndPoint}
+          />
+          <Box display='flex' flexDirection='column'>
+            <Typography id='max-speed-slider'>Max speed:</Typography>
+            <Input
+              type='number'
+              ref={maxSpeedRef}
+              aria-labelledby='max-speed-slider'
+              value={maxSpeed}
+              endAdornment={
+                <InputAdornment position='end'>km/h</InputAdornment>
+              }
+              onChange={(e) => setMaxSpeed(Number(e.target.value))}
+            />
+          </Box>
           <Button
             loading={!!loadingText}
             color='success'
@@ -48,7 +86,7 @@ function StartAndEndPointPicker({ onRoutePressed, loadingText }: Props) {
             loadingPosition='start'
             onClick={() => {
               if (!startPoint || !endPoint) return
-              onRoutePressed(startPoint, endPoint)
+              onRoutePressed(startPoint, endPoint, maxSpeed)
             }}
           >
             {loadingText ?? 'Compute route'}
@@ -73,4 +111,4 @@ function StartAndEndPointPicker({ onRoutePressed, loadingText }: Props) {
   )
 }
 
-export default React.memo(StartAndEndPointPicker)
+export default React.memo(RouteParametersPicker)

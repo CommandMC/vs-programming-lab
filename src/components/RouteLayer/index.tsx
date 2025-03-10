@@ -8,12 +8,18 @@ import type { OSMID } from '../../osrm-api/types'
 import TimeUnderBridgeLine from './components/TimeUnderBridgeLine'
 
 interface Props {
+  maxSpeed: number
   nodeData: NodeData[]
   distanceUnderBridge: Record<OSMID, number>
   timeUnderBridge: Record<OSMID, number>
 }
 
-function RouteLayer({ nodeData, distanceUnderBridge, timeUnderBridge }: Props) {
+function RouteLayer({
+  maxSpeed,
+  nodeData,
+  distanceUnderBridge,
+  timeUnderBridge
+}: Props) {
   return (
     <>
       <LayersControl.Overlay checked name='Route'>
@@ -28,6 +34,7 @@ function RouteLayer({ nodeData, distanceUnderBridge, timeUnderBridge }: Props) {
                 id2={second.id}
                 pos1={first.coordinates}
                 pos2={second.coordinates}
+                maxSpeed={maxSpeed}
                 speed={second.speed}
                 length={second.segmentLength}
                 distanceAlongRoute={first.distanceAlongRoute}
@@ -72,10 +79,14 @@ function RouteLayer({ nodeData, distanceUnderBridge, timeUnderBridge }: Props) {
                 justifyContent: 'space-between'
               }}
             >
-              <p>10</p>
-              <p>50</p>
-              <p>90</p>
-              <p>130</p>
+              {[
+                10,
+                10 + (1 / 3) * (maxSpeed - 10),
+                10 + (2 / 3) * (maxSpeed - 10),
+                maxSpeed
+              ].map((speed) => (
+                <p key={speed}>{speed.toFixed()}</p>
+              ))}
             </div>
           </Paper>
         </div>
