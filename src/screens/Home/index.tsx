@@ -39,12 +39,7 @@ export default function HomeScreen() {
   const [fetchingObstacles, setFetchingObstacles] = useState(false)
 
   const lookupRoute = useCallback(
-    async (
-      start: [number, number],
-      end: [number, number],
-      maxSpeed: number
-    ) => {
-      setMaxSpeed(maxSpeed)
+    async (start: [number, number], end: [number, number]) => {
       setRouteData(null)
       setFetchingRoute(true)
       const newRoute = await routing_api.route_request({
@@ -283,7 +278,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         node.speed = Math.min(maxSpeed, node.speed)
         return node
       })
-  }, [routeData, nodeSpeedLimits])
+  }, [routeData, nodeSpeedLimits, maxSpeed])
 
   const [distanceUnderBridge, timeUnderBridge] = useMemo(() => {
     if (!nodeDataWithUpdatedSpeeds.length || !obstacles) return [[], []]
@@ -356,6 +351,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         <LayersControl position='topright'>
           <RouteParametersPicker
             onRoutePressed={lookupRoute}
+            setMaxSpeed={setMaxSpeed}
             loadingText={routeButtonLoadingText}
           />
           {routeData && (

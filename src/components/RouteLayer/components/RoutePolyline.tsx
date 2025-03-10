@@ -39,7 +39,9 @@ function RoutePolyline({
   return (
     <Polyline
       positions={[pos1 as [number, number], pos2 as [number, number]]}
-      color={color_at_speed.hex()}
+      pathOptions={{
+        color: color_at_speed.hex()
+      }}
     >
       <Popup>
         OSM IDs:

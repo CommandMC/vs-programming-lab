@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import {
   Box,
   Button,
-  Input,
+  FormControl,
   InputAdornment,
+  OutlinedInput,
   Paper,
   Typography
 } from '@mui/material'
@@ -15,16 +16,20 @@ import LocationPicker from './components/LocationPicker'
 interface Props {
   onRoutePressed: (
     startCoords: [number, number],
-    endCoords: [number, number],
-    maxSpeed: number
+    endCoords: [number, number]
   ) => void
+  setMaxSpeed: (maxSpeed: number) => unknown
   loadingText?: string
 }
 
-function RouteParametersPicker({ onRoutePressed, loadingText }: Props) {
+function RouteParametersPicker({
+  onRoutePressed,
+  setMaxSpeed,
+  loadingText
+}: Props) {
   const [startPoint, setStartPoint] = useState<[number, number] | null>(null)
   const [endPoint, setEndPoint] = useState<[number, number] | null>(null)
-  const [maxSpeed, setMaxSpeed] = useState(130)
+  const [maxSpeed, setMaxSpeedTemp] = useState(130)
 
   const startRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -66,19 +71,6 @@ function RouteParametersPicker({ onRoutePressed, loadingText }: Props) {
             label='End location'
             onLocationUpdate={setEndPoint}
           />
-          <Box display='flex' flexDirection='column'>
-            <Typography id='max-speed-slider'>Max speed:</Typography>
-            <Input
-              type='number'
-              ref={maxSpeedRef}
-              aria-labelledby='max-speed-slider'
-              value={maxSpeed}
-              endAdornment={
-                <InputAdornment position='end'>km/h</InputAdornment>
-              }
-              onChange={(e) => setMaxSpeed(Number(e.target.value))}
-            />
-          </Box>
           <Button
             loading={!!loadingText}
             color='success'
@@ -86,11 +78,29 @@ function RouteParametersPicker({ onRoutePressed, loadingText }: Props) {
             loadingPosition='start'
             onClick={() => {
               if (!startPoint || !endPoint) return
-              onRoutePressed(startPoint, endPoint, maxSpeed)
+              onRoutePressed(startPoint, endPoint)
             }}
           >
             {loadingText ?? 'Compute route'}
           </Button>
+          <FormControl>
+            <Box marginTop={3} display='flex' flexDirection='column'>
+              <Typography id='max-speed-slider'>Max speed:</Typography>
+              <OutlinedInput
+                type='number'
+                ref={maxSpeedRef}
+                aria-labelledby='max-speed-slider'
+                defaultValue={130}
+                endAdornment={
+                  <InputAdornment position='end'>km/h</InputAdornment>
+                }
+                onChange={(e) => setMaxSpeedTemp(Number(e.target.value))}
+              />
+            </Box>
+            <Button color='success' onClick={() => setMaxSpeed(maxSpeed)}>
+              Update speed limit
+            </Button>
+          </FormControl>
         </Paper>
       </div>
       <LayersControl.Overlay checked name='Start/End markers'>
