@@ -224,7 +224,6 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
           const nearestNode = Object.entries(routeData.extraNodeData)
             .map(([id, data]) => ({
               id: Number(id),
-              data,
               distance: haversine(center, data.coordinates)
             }))
             .reduce((prev, curr) =>

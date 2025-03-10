@@ -23,13 +23,29 @@ function DownloadRouteDataButton({
 }: Props) {
   const downloadRouteData = useCallback(() => {
     if (!nodeData || !obstacles || !tunnels) return
+
+    const absoluteTimes: Record<OSMID, number> = Object.fromEntries(
+      nodeData
+        .map((nodeData) => nodeData.distanceAlongRoute / (nodeData.speed / 3.6))
+        .reduce(
+          (previousValue, currentValue) => [
+            ...previousValue,
+            previousValue.at(-1)! + currentValue
+          ],
+          [0]
+        )
+        .slice(0, -1)
+        .map((timestamp, i) => [nodeData[i]!.id, timestamp])
+    )
+
     const blob = new Blob(
       [
         JSON.stringify({
           routeData: nodeData.map((node) => ({
             ...node,
             distanceUnderBridge: distanceUnderBridge[node.id] ?? 0,
-            timeUnderBridge: timeUnderBridge[node.id] ?? 0
+            timeUnderBridge: timeUnderBridge[node.id] ?? 0,
+            timeAlongRoute: absoluteTimes[node.id]
           })),
           obstacles,
           tunnels
