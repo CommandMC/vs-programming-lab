@@ -40,23 +40,20 @@ function DownloadRouteDataButton({
 
     const blob = new Blob(
       [
-        JSON.stringify({
-          routeData: nodeData.map((node) => ({
-            ...node,
-            distanceUnderBridge: distanceUnderBridge[node.id] ?? 0,
-            timeUnderBridge: timeUnderBridge[node.id] ?? 0,
-            timeAlongRoute: absoluteTimes[node.id]
-          })),
-          obstacles,
-          tunnels
-        })
+        `timestamp,timeUnderBridge,speed\n`,
+        nodeData
+          .map(
+            (node) =>
+              `${absoluteTimes[node.id]},${timeUnderBridge[node.id] ?? 0},${node.speed}`
+          )
+          .join('\n')
       ],
-      { type: 'application/json' }
+      { type: 'text/csv' }
     )
     const href = URL.createObjectURL(blob)
     const linkElem = document.createElement('a')
     linkElem.href = href
-    linkElem.download = 'RouteData.json'
+    linkElem.download = 'RouteData.csv'
     document.body.appendChild(linkElem)
     linkElem.click()
     document.body.removeChild(linkElem)
