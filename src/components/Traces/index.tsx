@@ -5,7 +5,7 @@ import type { OSMID } from '../../osrm-api/types'
 
 interface Props {
   timeUnderBridge: Record<OSMID, number>
-  nodeDataWithUpdatedSpeeds: {
+  nodeData: {
     id: number
     distanceAlongRoute: number
   }[]
@@ -16,7 +16,7 @@ interface Props {
 
 function Traces({
   timeUnderBridge,
-  nodeDataWithUpdatedSpeeds,
+  nodeData,
   burstLength,
   maxRtt,
   pktsToRttNorm
@@ -50,13 +50,23 @@ function Traces({
                   .filter(([id]) => timeUnderBridge[Number(id)])
                   .map(([id, val]) => ({
                     x: Number(
-                      nodeDataWithUpdatedSpeeds
+                      nodeData
                         .find((node) => node.id === Number(id))!
                         .distanceAlongRoute.toFixed(2)
                     ),
                     y: Number(val.toFixed(2)),
                     id
                   }))
+              }
+            ]}
+            xAxis={[
+              {
+                label: 'Distance along route'
+              }
+            ]}
+            yAxis={[
+              {
+                label
               }
             ]}
           />

@@ -375,7 +375,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
       </MapContainer>
       <Traces
         timeUnderBridge={timeUnderBridge}
-        nodeDataWithUpdatedSpeeds={nodeDataWithUpdatedSpeeds}
+        nodeData={nodeDataWithUpdatedSpeeds}
         burstLength={burstLength}
         maxRtt={maxRtt}
         pktsToRttNorm={pktsToRttNorm}
