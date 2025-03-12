@@ -4,6 +4,10 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .leaflet-container {
+    background: black;
+  }
+
   .map-tiles {
     filter: var(--map-tiles-filter, none);
   }
