@@ -44,6 +44,7 @@ interface ObstacleOnRoute {
   osm_name?: string | null
   bast_name?: string | null
   est_width?: number
+  nn_width?: number
   osm_width?: number | null
   bast_width?: number | null
   bwnr_tbwnr?: string | null

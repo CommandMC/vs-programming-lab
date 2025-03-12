@@ -35,6 +35,7 @@ function ObstaclesLayer({ obstacles }: Props) {
                     ['bast_name', 'BASt name', ''],
                     ['osm_name', 'OSM name', ''],
                     ['est_width', 'Estimated width', ' m'],
+                    ['nn_width', 'Est. width from NN', ' m'],
                     ['osm_width', 'OSM width', ' m'],
                     ['bast_width', 'BASt width', ' m'],
                     ['bwnr_tbwnr', 'BWNR', '']

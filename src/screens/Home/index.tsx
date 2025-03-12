@@ -308,7 +308,8 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
           distanceUnderBridge = 0
         }
       } else {
-        distanceUnderBridge = obstacle.osm_width ?? obstacle.est_width!
+        distanceUnderBridge =
+          obstacle.osm_width ?? obstacle.est_width ?? obstacle.nn_width!
       }
       const segmentTime =
         relevantNode.segmentLength / (relevantNode.speed / 3.6)
