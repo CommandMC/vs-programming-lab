@@ -91,6 +91,6 @@ df["width"] = df["width"].str.replace(' ','')
 df["width"] = df["width"].str.replace(',','.')
 df["width"] = df["width"].str.removesuffix('m')
 df["width"] = pd.to_numeric(df["width"], errors='coerce')
-df["width"].where(df["width"] > 0 ,None, inplace=True)
+df["width"] = df["width"].where(df["width"] > 0, None)
 
 df.to_pickle(r'meta/Data/extracted_osm_data.pkl')
