@@ -324,17 +324,15 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
     return [obstructedDistance, obstructedTime]
   }, [nodeDataWithUpdatedSpeeds, obstacles])
 
-  const [burstLength, maxRtt, pktsToRttNorm] = useMemo(() => {
-    const burstLength: Record<OSMID, number> = {}
+  const [maxRtt, pktsToRttNorm] = useMemo(() => {
     const maxRtt: Record<OSMID, number> = {}
     const pktsToRttNorm: Record<OSMID, number> = {}
     Object.entries(timeUnderBridge).forEach(([idStr, time]) => {
       const id = Number(idStr)
-      burstLength[id] = time * 56.52436265101327 + 1.7883695471513976
       maxRtt[id] = time * 328.81459346950214 + 222.29597475535095
       pktsToRttNorm[id] = maxRtt[id]! * 0.08430682594537886 - 8.401958514887447
     })
-    return [burstLength, maxRtt, pktsToRttNorm]
+    return [maxRtt, pktsToRttNorm]
   }, [timeUnderBridge])
 
   return (
@@ -377,7 +375,6 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
       <Traces
         timeUnderBridge={timeUnderBridge}
         nodeData={nodeDataWithUpdatedSpeeds}
-        burstLength={burstLength}
         maxRtt={maxRtt}
         pktsToRttNorm={pktsToRttNorm}
       />

@@ -9,23 +9,16 @@ interface Props {
     id: number
     distanceAlongRoute: number
   }[]
-  burstLength: Record<OSMID, number>
   maxRtt: Record<OSMID, number>
   pktsToRttNorm: Record<OSMID, number>
 }
 
-function Traces({
-  timeUnderBridge,
-  nodeData,
-  burstLength,
-  maxRtt,
-  pktsToRttNorm
-}: Props) {
+function Traces({ timeUnderBridge, nodeData, maxRtt, pktsToRttNorm }: Props) {
   return (
     <>
       {(
         [
-          [burstLength, 'Burst length'],
+          [timeUnderBridge, 'Burst length'],
           [maxRtt, 'Max RTT'],
           [
             pktsToRttNorm,
