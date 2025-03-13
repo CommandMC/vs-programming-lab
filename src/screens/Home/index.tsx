@@ -285,7 +285,7 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
     // OSM classifies separate lanes of a bridge as separate bridges. Thus, multiple OSM bridges might map onto the
     // same bridge from BASt. In that case, the width reported by BASt will be the full width of all lanes combined.
     // To avoid double-counting, we keep track of which BASt names we've already used.
-    const usedBastNames: string[] = []
+    const usedBastIds: string[] = []
     const obstructedDistance: Record<OSMID, number> = {}
     const obstructedTime: Record<OSMID, number> = {}
 
@@ -299,9 +299,9 @@ way(around.route:0)[bridge][man_made!="bridge"]->.bridges;
         (node) => node.id === obstacle.nodeid
       )!
       let distanceUnderBridge: number
-      if (obstacle.bast_width && obstacle.bast_name) {
-        if (!usedBastNames.includes(obstacle.bast_name)) {
-          usedBastNames.push(obstacle.bast_name)
+      if (obstacle.bast_width && obstacle.bwnr_tbwnr) {
+        if (!usedBastIds.includes(obstacle.bwnr_tbwnr)) {
+          usedBastIds.push(obstacle.bwnr_tbwnr)
           distanceUnderBridge = obstacle.bast_width
         } else {
           // Skip the bridge if we've already seen it
